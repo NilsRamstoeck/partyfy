@@ -1,7 +1,11 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
+import { State } from 'database/state';
+import { User } from 'database/user';
 import 'lib/mongo';
+import { getSpotifyAccessToken, getSpotifyUserInfo } from 'lib/spotify';
 import type { NextApiRequest, NextApiResponse } from 'next'
-import querystring from 'querystring';
+import {sign as signJWT} from 'jsonwebtoken';
+import { jwt_secret_key } from 'config';
 
 const methods = {
     GET: (req: NextApiRequest, res: NextApiResponse) => _get(req, res),
@@ -21,38 +25,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 async function _get(req: NextApiRequest, res: NextApiResponse) {
+    const { code, state } = req.query;
 
-    if (!req.query.code) {
-        res.status(400).send('No code');
+    if (typeof code != 'string' || typeof state != 'string') {
+        res.status(400).send('Bad Request');
         return;
     }
 
-    const token_url = 'https://accounts.spotify.com/api/token?' +
-        querystring.stringify({
-            grant_type: 'authorization_code',
-            code: req.query.code,
-            redirect_uri: 'https://feuchtnas.ddns.net/api/user/auth',
-        })
+    const state_document = await State.findOne({ state: state });
 
-    const { client_id, client_secret } = await import('config');
-
-    const response = await fetch(token_url, {
-        headers: {
-            Authorization: 'Basic ' + Buffer.from(client_id + ':' + client_secret).toString('base64'),
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        method: 'POST'
-    });
-
-    try {
-        const response_data = await response.json();
-
-        //do stuff
-
-        res.status(200).json({token:'t'});
-    } catch (_) {
-        res.status(500).send(await response.text());
+    if (state_document?.state != state) {
+        res.status(403).send('Forbidden');
+        return;
     }
+
+    state_document.delete();
+
+    const spotify_token = await getSpotifyAccessToken(code);
+
+    if (!spotify_token) {
+        res.status(500).send('Could not get token from Spotify');
+        return;
+    }
+    
+    const {access_token, refresh_token, expires_in} = spotify_token;
+    const user_info = await getSpotifyUserInfo(access_token);
+
+    if (!user_info) {
+        res.status(500).send('Could not retrieve user info');
+        return;
+    }
+
+    const {email, display_name:username } = user_info;
+
+    if(!await User.exists({email})){
+        User.create({
+            username,
+            email,
+            access_token,
+            refresh_token,
+            expires_in
+        })
+    } else {
+        User.findOneAndUpdate({email}, {
+            username,
+            access_token,
+            refresh_token,
+            expires_in
+        });
+    }
+        
+    const token = signJWT({email}, jwt_secret_key);
+
+    res.status(200).json({token});
 }
 
 async function _post(req: NextApiRequest, res: NextApiResponse) {

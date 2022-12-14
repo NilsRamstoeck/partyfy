@@ -3,7 +3,7 @@ import { Model, model, models, Schema } from "mongoose"
 interface IState {
     state:string,
     ip:string,
-    timestamp:string,
+    timestamp:number,
     expires_in:number
 }
 
@@ -21,8 +21,8 @@ const StateSchema = new Schema<IState>({
         index:false
     },
     timestamp:{
-        type:String,
-        required:true,
+        type: Number,
+        default: Date.now
     },
     expires_in:{
         type:Number,
@@ -30,13 +30,13 @@ const StateSchema = new Schema<IState>({
     }
 })
 
-let stateModel:Model<IState>;
+let StateModel:Model<IState>;
 
 try{
-    stateModel = model<IState>("State", StateSchema);
+    StateModel = model<IState>("State", StateSchema);
 } catch (_) {
-    stateModel = models['State']
+    StateModel = models['State']
     console.warn('Did not recompile State Model')
 }
 
-export const State = stateModel;
+export const State = StateModel;

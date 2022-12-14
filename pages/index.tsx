@@ -14,11 +14,10 @@ export async function getStaticProps() {
 export default function Home() {
 
   const [authenticated, setAuthenticated] = useState<boolean>(false);
-
   useEffect(() => {
     async function fetchData(){
-
-      const {code, state} = querystring.decode(window.location.search.slice(1, -1));
+      
+      const {code, state} = querystring.decode(window.location.search.slice(1));
       const token = localStorage.getItem('token');
       console.log({code, state, token}, (!code || !state) && !token);
       

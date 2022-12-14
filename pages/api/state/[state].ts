@@ -40,8 +40,7 @@ async function _post(req: NextApiRequest, res: NextApiResponse) {
 
     await State.create({
         state,
-        ip,
-        timestamp: new Date().toISOString()
+        ip
     });
 
     res.status(200).json({ msg: 'success' });
