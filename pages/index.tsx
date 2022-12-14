@@ -16,13 +16,11 @@ export default function Home() {
   const [authenticated, setAuthenticated] = useState<boolean>(false);
   useEffect(() => {
     async function fetchData(){
-      
+
       const {code, state} = querystring.decode(window.location.search.slice(1));
       const token = localStorage.getItem('token');
-      console.log({code, state, token}, (!code || !state) && !token);
       
       if((!code || !state) && !token){
-        console.log('REEE');
         window.location.assign('/login');
         return;
       }

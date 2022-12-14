@@ -33,6 +33,10 @@ const UserSchema = new Schema<IUser>({
     timestamp: {
         default: Date.now,
         type: Number
+    },
+    expires_in: {
+        required: true,
+        type: Number
     }
 });
 
