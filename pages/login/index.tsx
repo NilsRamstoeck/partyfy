@@ -1,9 +1,9 @@
 import Head from 'next/head'
-import styles from '@styles/Home.module.css'
+import styles from '@styles/Login.module.css'
 import querystring from 'querystring';
 import { generatePrimeSync } from 'crypto';
 import { NextPageContext } from 'next';
-import { MouseEvent, useEffect, useState } from 'react';
+import { MouseEvent, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { redirect_uri } from 'config';
 
@@ -100,11 +100,11 @@ export default function Home({ login_url }: Props) {
           Partyfy
         </h1>
 
-        <p className={styles.description}>
+        <div className={styles.content}>
           <a className={styles.card} onClick={saveState} href={login_url}>
             Login with Spotify
           </a>
-        </p>
+        </div>
 
       </main>
 

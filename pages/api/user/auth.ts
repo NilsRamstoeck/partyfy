@@ -4,7 +4,7 @@ import { User } from 'database/user';
 import 'lib/mongo';
 import { getSpotifyAccessToken, getSpotifyUserInfo } from 'lib/spotify';
 import type { NextApiRequest, NextApiResponse } from 'next'
-import {sign as signJWT} from 'jsonwebtoken';
+import { sign as signJWT } from 'jsonwebtoken';
 import { jwt_secret_key } from 'config';
 
 const methods = {
@@ -28,14 +28,14 @@ async function _get(req: NextApiRequest, res: NextApiResponse) {
     const { code, state } = req.query;
 
     if (typeof code != 'string' || typeof state != 'string') {
-        res.status(400).send('Bad Request');
+        res.status(400).json({ err: 'Bad Request' });
         return;
     }
 
     const state_document = await State.findOne({ state: state });
 
     if (state_document?.state != state) {
-        res.status(403).send('Forbidden');
+        res.status(403).json({ err: 'Forbidden' });
         return;
     }
 
@@ -44,21 +44,21 @@ async function _get(req: NextApiRequest, res: NextApiResponse) {
     const spotify_token = await getSpotifyAccessToken(code);
 
     if (!spotify_token) {
-        res.status(500).send('Could not get token from Spotify');
+        res.status(500).json({ err: 'Could not get token from Spotify' });
         return;
     }
-    
-    const {access_token, refresh_token, expires_in} = spotify_token;
+
+    const { access_token, refresh_token, expires_in } = spotify_token;
     const user_info = await getSpotifyUserInfo(access_token);
 
     if (!user_info) {
-        res.status(500).send('Could not retrieve user info');
+        res.status(500).json({ err: 'Could not retrieve user info' });
         return;
     }
 
-    const {email, display_name:username } = user_info;
+    const { email, display_name: username } = user_info;
 
-    if(!await User.exists({email})){
+    if (!await User.exists({ email })) {
         User.create({
             username,
             email,
@@ -67,43 +67,43 @@ async function _get(req: NextApiRequest, res: NextApiResponse) {
             expires_in
         })
     } else {
-        User.findOneAndUpdate({email}, {
+        User.findOneAndUpdate({ email }, {
             username,
             access_token,
             refresh_token,
             expires_in
         });
     }
-        
-    const token = signJWT({email}, jwt_secret_key);
 
-    res.status(200).json({token});
+    const token = signJWT({ email }, jwt_secret_key);
+
+    res.status(200).json({ token });
 }
 
 async function _post(req: NextApiRequest, res: NextApiResponse) {
-    res.status(500).send('Method has not been implemented');
+    res.status(500).json({ err: 'Method has not been implemented' });
 }
 
 async function _put(req: NextApiRequest, res: NextApiResponse) {
-    res.status(500).send('Method has not been implemented');
+    res.status(500).json({ err: 'Method has not been implemented' });
 }
 
 async function _delete(req: NextApiRequest, res: NextApiResponse) {
-    res.status(500).send('Method has not been implemented');
+    res.status(500).json({ err: 'Method has not been implemented' });
 }
 
 async function _head(req: NextApiRequest, res: NextApiResponse<any>) {
-    res.status(500).send('Method has not been implemented');
+    res.status(500).json({ err: 'Method has not been implemented' });
 }
 async function _update(req: NextApiRequest, res: NextApiResponse<any>) {
-    res.status(500).send('Method has not been implemented');
+    res.status(500).json({ err: 'Method has not been implemented' });
 }
 
 async function _trace(req: NextApiRequest, res: NextApiResponse<any>) {
-    res.status(500).send('Method has not been implemented');
+    res.status(500).json({ err: 'Method has not been implemented' });
 }
 
 async function _options(req: NextApiRequest, res: NextApiResponse) {
-    res.status(500).send('Method has not been implemented');
+    res.status(500).json({ err: 'Method has not been implemented' });
 }
 

@@ -15,6 +15,10 @@ a {
   box-sizing: border-box;
 }
 
+:root{
+  --clr-primary: #1ed760;
+}
+
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;

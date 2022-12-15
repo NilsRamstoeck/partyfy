@@ -16,13 +16,8 @@ export default function Home() {
   const [authenticated, setAuthenticated] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(false);
   const [username, setUsername] = useState<string>('');
-  const [loaderColor, setLoaderColor] = useState<string>('');
-  const [loaderSize, setLoaderSize] = useState<number>(0);
 
   useEffect(() => {
-    setLoaderColor(getComputedStyle(document.body).getPropertyValue('--clr-primary'));
-    setLoaderSize(window.visualViewport.width / 5);
-
     if (!router.isReady) return;
     if (authenticated) return;
 
@@ -32,26 +27,6 @@ export default function Home() {
       router.push('/login');
       return;
     }
-
-    fetch('/api/user/@me', {
-      method: 'GET',
-      headers: {
-        Authorization: 'Bearer ' + token,
-      }
-    })
-      .then(response => {
-        if (response.status == 200) return response;
-
-        console.log('NOT AUTHORIZED');
-
-        // localStorage.removeItem(token);
-        // router.push('login');
-        throw new Error('Invalid Token')
-      })
-      .then(response => response.json())
-      .then(data => setUsername(data.username))
-      .then(data => setLoaded(true))
-      .catch(_ => console.error(_));
 
   }, [router, authenticated]);
 
@@ -64,15 +39,6 @@ export default function Home() {
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          Hello, {username}
-        </h1>
-
-        <div className={styles.content}>
-          <span className={styles.card}>
-            Create Room
-          </span>
-        </div>
       </main>
 
       <footer className={styles.footer}>
