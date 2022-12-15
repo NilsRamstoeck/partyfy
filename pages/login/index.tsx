@@ -3,23 +3,25 @@ import styles from '@styles/Home.module.css'
 import querystring from 'querystring';
 import { generatePrimeSync } from 'crypto';
 import { NextPageContext } from 'next';
-import { MouseEvent } from 'react';
+import { MouseEvent, useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import { redirect_uri } from 'config';
 
-type ServerProps = NonNullable<Awaited<ReturnType<typeof getServerSideProps>>['props']>;
+type Props = NonNullable<Awaited<ReturnType<typeof getServerSideProps>>['props']>;
 
 export async function getServerSideProps({ req }: NextPageContext) {
   const state = Buffer.from(generatePrimeSync(128)).toString('hex');
   const scope = 'user-read-email user-modify-playback-state user-read-playback-state user-read-currently-playing';
   const ip = req?.headers['x-real-ip'];
 
-  if(!ip){
+  if (!ip) {
     return {
       redirect: {
         destination: '/login'
       }
     }
   }
-  
+
   return {
     props: {
       login_url: 'https://accounts.spotify.com/authorize?' +
@@ -27,22 +29,58 @@ export async function getServerSideProps({ req }: NextPageContext) {
           response_type: 'code',
           client_id: (await import('config')).client_id,
           scope: scope,
-          redirect_uri: 'https://feuchtnas.ddns.net/',
+          redirect_uri,
           state: state
         })
     }
   };
 }
 
-export default function Home({ login_url }: ServerProps) {
+async function getJWT(code: string, state: string) {
+  const response = await fetch(`api/user/auth?code=${code}&state=${state}`)
+  if (response.status != 200) {
+    throw new Error('Could not get JWT');
+  }
+  const data = await response.json();
+  return data.token as string;
+}
 
-  async function saveState(e:MouseEvent<HTMLAnchorElement>){
+export default function Home({ login_url }: Props) {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    const { code, state } = router.query;
+    const token = localStorage.getItem('token');
+
+    if (token) {
+      router.push('/');
+      return;
+    };
+
+    if (typeof code != 'string' || typeof state != 'string') {
+      return;
+    }
+
+    getJWT(code, state)
+      .then((token) => {
+        localStorage.setItem('token', token);
+        router.push('/');
+      })
+      .catch((e) => {
+        console.error(e);
+      })
+
+  }, [router]);
+
+  async function saveState(e: MouseEvent<HTMLAnchorElement>) {
     e.preventDefault();
-    const {state} = querystring.decode(login_url.split('?')[1]);
+    const { state } = querystring.decode(login_url.split('?')[1]);
 
-    const response = await fetch(`/api/state/${state}`, {method:'POST'});
+    const response = await fetch(`/api/state/${state}`, { method: 'POST' });
 
-    if(response.status != 200){
+    if (response.status != 200) {
       //ERROR
     }
 
