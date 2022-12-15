@@ -1,4 +1,4 @@
-import { client_id, client_secret } from 'config';
+import { client_id, client_secret, redirect_uri } from 'config';
 import querystring from 'querystring';
 
 interface SpotifyUserData {
@@ -26,20 +26,30 @@ interface SpotifyToken {
     scope: string
 }
 
+async function spotifyAPIRequest(input: RequestInfo | URL, init?: RequestInit) {
+    const response = await fetch(input, init);
+    try {
+        const responseData = await response.json();
+
+        if (response.status != 200) {
+            throw new Error('Error from Spotify: ' + JSON.stringify(responseData));
+        }
+
+        return responseData;
+    } catch (e_) {
+        return null;
+    }
+}
+
 export async function getSpotifyUserInfo(token: string): Promise<SpotifyUserData | null> {
-    const response = await fetch('https://api.spotify.com/v1/me', {
+    return await spotifyAPIRequest('https://api.spotify.com/v1/me', {
         headers: {
             Authorization: 'Bearer ' + token,
             'Content-Type': 'application/x-www-form-urlencoded'
         },
         method: 'GET'
-    });
-
-    try {
-        return await response.json();
-    } catch (e_) {
-        return null;
     }
+    );
 }
 
 export async function getSpotifyAccessToken(code: string): Promise<SpotifyToken | null> {
@@ -47,21 +57,14 @@ export async function getSpotifyAccessToken(code: string): Promise<SpotifyToken 
         querystring.stringify({
             grant_type: 'authorization_code',
             code: code,
-            redirect_uri: 'https://feuchtnas.ddns.net/',
+            redirect_uri,
         })
 
-
-    const response = await fetch(spotify_token_url, {
+    return await spotifyAPIRequest(spotify_token_url, {
         headers: {
             Authorization: 'Basic ' + Buffer.from(client_id + ':' + client_secret).toString('base64'),
             'Content-Type': 'application/x-www-form-urlencoded'
         },
         method: 'POST'
     });
-
-    try {
-        return await response.json();
-    } catch (e_) {
-        return null;
-    }
 }
