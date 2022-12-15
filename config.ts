@@ -10,3 +10,4 @@ export const mongodb_host =  process.env.MONGODB_HOST!;
 export const mongodb_port =  process.env.MONGODB_PORT!;
 export const jwt_secret_key =  process.env.JWT_SECRET_KEY!;
 export const token_header_key =  process.env.TOKEN_HEADER_KEY!;
+export const redirect_uri = process.env.REDIRECT_URI!;
