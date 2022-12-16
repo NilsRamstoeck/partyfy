@@ -4,15 +4,23 @@ import { useEffect, useState } from 'react';
 import { Loader } from 'components/Loader';
 
 export default function App({ Component, pageProps }: AppProps) {
-  const [loaderColor, setLoaderColor] = useState<string>('');
-  const [loaderSize, setLoaderSize] = useState<number>(0);
+
+  const [childLoaded, setchildLoaded] = useState(false);
+  const [selfLoaded, setSelfLoaded] = useState(false);
 
   useEffect(() => {
-    setLoaderColor(getComputedStyle(document.body).getPropertyValue('--clr-primary'));
-    setLoaderSize(window.visualViewport.width / 5);
+    addEventListener('loaded', () => {
+      setchildLoaded(true);
+    });
+    setSelfLoaded(true);
   }, []);
 
-  return true ?
-    <Loader></Loader> :
-    <Component {...pageProps} />
+  useEffect(() => {
+    setchildLoaded(false);
+  }, [Component]);
+
+  return <div>
+    {!childLoaded && <Loader />}
+    {selfLoaded && <Component {...pageProps} />}
+  </div>
 }

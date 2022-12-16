@@ -14,14 +14,9 @@ export async function getStaticProps() {
 export default function Home() {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState<boolean>(false);
-  const [loaded, setLoaded] = useState<boolean>(false);
   const [username, setUsername] = useState<string>('');
-  const [loaderColor, setLoaderColor] = useState<string>('');
-  const [loaderSize, setLoaderSize] = useState<number>(0);
 
   useEffect(() => {
-    setLoaderColor(getComputedStyle(document.body).getPropertyValue('--clr-primary'));
-    setLoaderSize(window.visualViewport.width / 5);
 
     if (!router.isReady) return;
     if (authenticated) return;
@@ -41,16 +36,14 @@ export default function Home() {
     })
       .then(response => {
         if (response.status == 200) return response;
-
         console.log('NOT AUTHORIZED');
-
-        // localStorage.removeItem(token);
-        // router.push('login');
         throw new Error('Invalid Token')
       })
       .then(response => response.json())
       .then(data => setUsername(data.username))
-      .then(data => setLoaded(true))
+      .then(_ => setTimeout(() => dispatchEvent(new Event('loaded')), 1000))
+      // .then(_ => dispatchEvent(new Event('loaded')))
+      .then(_ => console.log('HOME LOADED'))
       .catch(_ => console.error(_));
 
   }, [router, authenticated]);

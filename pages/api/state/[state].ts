@@ -33,6 +33,8 @@ async function _post(req: NextApiRequest, res: NextApiResponse) {
         return;
     }
 
+    //TODO: Handle no database connection
+
     if (await State.exists({ state })) {
         res.status(400).json({ err: 'Bad Request' });
         return;

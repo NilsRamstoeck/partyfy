@@ -45,12 +45,12 @@ async function getJWT(code: string, state: string) {
   return data.token as string;
 }
 
-export default function Home({ login_url }: Props) {
+export default function Login({ login_url }: Props) {
   const router = useRouter();
 
   useEffect(() => {
     if (!router.isReady) return;
-
+    
     const { code, state } = router.query;
     const token = localStorage.getItem('token');
 
@@ -60,6 +60,8 @@ export default function Home({ login_url }: Props) {
     };
 
     if (typeof code != 'string' || typeof state != 'string') {
+      console.log('LOGIN LOADED');
+      dispatchEvent(new Event('loaded'));
       return;
     }
 
@@ -71,6 +73,7 @@ export default function Home({ login_url }: Props) {
       .catch((e) => {
         console.error(e);
       })
+      
 
   }, [router]);
 

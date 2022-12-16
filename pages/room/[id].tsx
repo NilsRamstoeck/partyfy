@@ -11,7 +11,7 @@ export async function getStaticProps() {
     }
   }
 }
-export default function Home() {
+export default function Room() {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(false);
