@@ -1,12 +1,14 @@
 import { Model, model, models, Schema } from "mongoose"
+import { IRoom } from "./room";
 
-interface IUser {
+export interface IUser {
     email: string,
     username: string,
     access_token: string,
     refresh_token: string,
     timestamp: number,
     expires_in: number
+    room?: IRoom
 }
 
 const UserSchema = new Schema<IUser>({
@@ -37,6 +39,10 @@ const UserSchema = new Schema<IUser>({
     expires_in: {
         required: true,
         type: Number
+    },
+    room: {
+        type: Schema.Types.ObjectId,
+        ref: 'Room'
     }
 });
 

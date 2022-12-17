@@ -1,6 +1,6 @@
 import { Model, model, models, Schema } from "mongoose"
 
-interface IState {
+export interface IState {
     state:string,
     ip:string,
     timestamp:number,

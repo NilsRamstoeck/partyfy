@@ -15,6 +15,8 @@ export async function getServerSideProps({ req }: NextPageContext) {
   const ip = req?.headers['x-real-ip'];
 
   if (!ip) {
+    console.log('BAD REQUEST');
+    
     return {
       redirect: {
         destination: '/login'

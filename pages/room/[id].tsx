@@ -1,25 +1,15 @@
 import Head from 'next/head'
 import styles from '@styles/Home.module.css'
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { HashLoader } from 'react-spinners';
 
-export async function getStaticProps() {
-  return {
-    props: {
-
-    }
-  }
-}
 export default function Room() {
   const router = useRouter();
-  const [authenticated, setAuthenticated] = useState<boolean>(false);
-  const [loaded, setLoaded] = useState<boolean>(false);
-  const [username, setUsername] = useState<string>('');
+
+  const { id: roomId } = router.query;
 
   useEffect(() => {
     if (!router.isReady) return;
-    if (authenticated) return;
 
     const token = localStorage.getItem('token');
 
@@ -28,7 +18,14 @@ export default function Room() {
       return;
     }
 
-  }, [router, authenticated]);
+    fetch(`/api/room/${roomId}`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + token,
+      }
+    })
+
+  }, [router, roomId]);
 
   return (
     <div className={styles.container}>

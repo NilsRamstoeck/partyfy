@@ -1,8 +1,8 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { jwt_secret_key } from 'config';
-import { Jwt, JwtPayload, verify as verifyJWT } from 'jsonwebtoken';
 import { User } from 'database/user';
+import { authorizeToken } from 'lib/auth';
+import { connectToDatabase, isConnectedToDatabase } from 'lib/mongo';
 
 const methods = {
     GET: (req: NextApiRequest, res: NextApiResponse) => _get(req, res),
@@ -17,51 +17,42 @@ const methods = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const method = req.method ?? 'GET';
+    connectToDatabase();
     if (Object.hasOwn(methods, method))
         await methods[method as keyof typeof methods](req, res);
 }
 
 async function _get(req: NextApiRequest, res: NextApiResponse) {
-    const authorization_header = req.headers['authorization'];
+    const authorizationHeader = req.headers['authorization'];
 
-    if (typeof authorization_header != 'string') {
-        res.status(400).json({ err: 'Bad Request' });
+    if(!authorizationHeader){
+        res.status(401).json({ err: 'No authorization provided' });
         return;
     }
 
-    const [token_type, token] = authorization_header.split(' ');
+    const {isValid, payload} = authorizeToken(authorizationHeader);
 
-    if (token_type != 'Bearer') {
-        res.status(400).json({ err: 'Bad Request' });
+    if(!isValid || !payload) {
+        res.status(401).json({ err: 'Invalid Token' });
         return;
     }
 
-    let verified_token: JwtPayload | string;
-
-    try {
-        verified_token = verifyJWT(token, jwt_secret_key);
-    } catch {
-        res.status(401).json({ err: 'Unauthorized' });
-        return;
+    try{
+        const user = await User.findOne({
+            email: payload.email
+        }, {
+            username: true
+        })
+        
+        if (!user) {
+            res.status(404).json({ err: 'User does not exist' })
+            return;
+        }
+        res.status(200).json({username: user.username});
+        return
+    } catch (_){
+        res.status(500).json({ err: 'No Connection to Database'})
     }
-
-    if (typeof verified_token == 'string') {
-        res.status(500).json({ err: 'Internal Server Error' });
-        return;
-    }
-
-    const user = await User.findOne({
-        email: verified_token.email
-    }, {
-        username: true
-    })
-
-    if (!user) {
-        res.status(401).json({ err: 'Invalid User' })
-        return;
-    }
-
-    res.status(200).json({username: user.username});
 }
 
 async function _post(req: NextApiRequest, res: NextApiResponse) {

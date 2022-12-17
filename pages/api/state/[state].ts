@@ -1,6 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { State } from 'database/state';
 import 'lib/mongo';
+import { connectToDatabase } from 'lib/mongo';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 const methods = {
@@ -16,6 +17,7 @@ const methods = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const method = req.method ?? 'GET';
+    connectToDatabase();
     if (Object.hasOwn(methods, method))
         await methods[method as keyof typeof methods](req, res);
 }
@@ -33,19 +35,23 @@ async function _post(req: NextApiRequest, res: NextApiResponse) {
         return;
     }
 
-    //TODO: Handle no database connection
+    try {
+        if (await State.exists({ state })) {
+            res.status(400).json({ err: 'Bad Request' });
+            return;
+        }
 
-    if (await State.exists({ state })) {
-        res.status(400).json({ err: 'Bad Request' });
+        await State.create({
+            state,
+            ip
+        });
+
+        res.status(200).json({ msg: 'success' });
+        return;
+    } catch (_) {
+        res.status(500).json({ err: 'No Connection to Database' })
         return;
     }
-
-    await State.create({
-        state,
-        ip
-    });
-
-    res.status(200).json({ msg: 'success' });
 }
 
 async function _put(req: NextApiRequest, res: NextApiResponse) {
