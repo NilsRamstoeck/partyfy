@@ -41,14 +41,19 @@ async function _get(req: NextApiRequest, res: NextApiResponse) {
         const user = await User.findOne({
             email: payload.email
         }, {
-            username: true
+            username: true,
+            room: true
         })
+        .populate('room')
         
         if (!user) {
             res.status(404).json({ err: 'User does not exist' })
             return;
         }
-        res.status(200).json({username: user.username});
+        res.status(200).json({
+            username: user.username,
+            room_id: user.room?.id??''
+        });
         return
     } catch (_){
         res.status(500).json({ err: 'No Connection to Database'})
