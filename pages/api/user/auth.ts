@@ -39,8 +39,6 @@ async function _get(req: NextApiRequest, res: NextApiResponse) {
         return;
     }
 
-    state_document.delete();
-
     const spotify_token = await getSpotifyAccessToken(code);
 
     if (!spotify_token) {
@@ -76,8 +74,8 @@ async function _get(req: NextApiRequest, res: NextApiResponse) {
     }
 
     const token = signJWT({ email }, jwt_secret_key);
-
     res.status(200).json({ token });
+    state_document.delete();
 }
 
 async function _post(req: NextApiRequest, res: NextApiResponse) {

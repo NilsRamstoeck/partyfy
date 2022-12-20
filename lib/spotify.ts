@@ -36,13 +36,14 @@ async function spotifyAPIRequest(input: RequestInfo | URL, init?: RequestInit) {
         }
 
         return responseData;
-    } catch (e_) {
+    } catch (e) {
+        console.log(e);
         return null;
     }
 }
 
-export async function getSpotifyUserInfo(token: string): Promise<SpotifyUserData | null> {
-    return await spotifyAPIRequest('https://api.spotify.com/v1/me', {
+export function getSpotifyUserInfo(token: string): Promise<SpotifyUserData | null> {
+    return spotifyAPIRequest('https://api.spotify.com/v1/me', {
         headers: {
             Authorization: 'Bearer ' + token,
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -52,7 +53,7 @@ export async function getSpotifyUserInfo(token: string): Promise<SpotifyUserData
     );
 }
 
-export async function getSpotifyAccessToken(code: string): Promise<SpotifyToken | null> {
+export function getSpotifyAccessToken(code: string): Promise<SpotifyToken | null> {
     const spotify_token_url = 'https://accounts.spotify.com/api/token?' +
         querystring.stringify({
             grant_type: 'authorization_code',
@@ -60,7 +61,7 @@ export async function getSpotifyAccessToken(code: string): Promise<SpotifyToken 
             redirect_uri,
         })
 
-    return await spotifyAPIRequest(spotify_token_url, {
+    return spotifyAPIRequest(spotify_token_url, {
         headers: {
             Authorization: 'Basic ' + Buffer.from(client_id + ':' + client_secret).toString('base64'),
             'Content-Type': 'application/x-www-form-urlencoded'
