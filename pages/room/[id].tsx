@@ -1,10 +1,12 @@
 import Head from 'next/head'
-import styles from '@styles/Home.module.css'
-import { useEffect } from 'react';
+import styles from '@styles/Room.module.css'
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 
 export default function Room() {
   const router = useRouter();
+  const [members, setMembers] = useState<string[]>([]);
+  const [isHost, setIsHost] = useState<boolean>(false);
 
   const { id: roomId } = router.query;
 
@@ -18,14 +20,50 @@ export default function Room() {
       return;
     }
 
+    (async function () {
+
+      const postRoomRespose = await fetch(`/api/room/${roomId}`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+        }
+      });
+
+      const getRoomResponse = await fetch(`/api/room/${roomId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer ' + token,
+        }
+      })
+
+      if (getRoomResponse.status == 401 || postRoomRespose.status == 401) {
+        localStorage.removeItem('token');
+        router.push('/login');
+        return;
+      }
+
+      if (getRoomResponse.status != 200 || postRoomRespose.status != 200) {
+        // router.push('/');
+        return;
+      }
+
+      const getRoomResponseData = await getRoomResponse.json();
+
+      
+      setMembers(getRoomResponseData.members);
+      console.log(members);
+      dispatchEvent(new Event('loaded'));
+    })();
+
+    //TESTING ONLY
     fetch(`/api/room/${roomId}`, {
-      method: 'POST',
+      method: 'OPTIONS',
       headers: {
         Authorization: 'Bearer ' + token,
       }
     })
 
-  }, [router, roomId]);
+  }, [router]);
 
   return (
     <div className={styles.container}>
@@ -36,6 +74,10 @@ export default function Room() {
       </Head>
 
       <main className={styles.main}>
+        <p className="card">
+          {members}
+        </p>
+
       </main>
 
       <footer className={styles.footer}>
@@ -50,4 +92,10 @@ export default function Room() {
 
     </div>
   )
+}
+
+function HostOptions(){
+  return (
+    <div>HOST OPTIONS</div>
+  );
 }
