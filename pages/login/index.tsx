@@ -14,15 +14,15 @@ export async function getServerSideProps({ req }: NextPageContext) {
   const scope = 'user-read-email user-modify-playback-state user-read-playback-state user-read-currently-playing';
   const ip = req?.headers['x-real-ip'];
 
-  if (!ip) {
-    console.log('BAD REQUEST');
+  // if (!ip) {
+  //   console.log('BAD REQUEST');
     
-    return {
-      redirect: {
-        destination: '/login'
-      }
-    }
-  }
+  //   return {
+  //     redirect: {
+  //       destination: '/login'
+  //     }
+  //   }
+  // }
 
   return {
     props: {
@@ -87,6 +87,8 @@ export default function Login({ login_url }: Props) {
 
     if (response.status != 200) {
       //ERROR
+      console.log(await response.json());
+      return;
     }
 
     window.location.assign(login_url);
