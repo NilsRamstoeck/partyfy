@@ -19,7 +19,8 @@ const RoomSchema = new Schema<IRoom>({
         type: Schema.Types.ObjectId,
         required: true,
         unique: true,
-        index: true
+        index: true,
+        ref: 'User'
     },
     members: [{
         type: Schema.Types.ObjectId,
