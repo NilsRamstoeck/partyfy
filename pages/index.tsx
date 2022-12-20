@@ -35,39 +35,29 @@ export default function Home() {
       return;
     }
     async function getData() {
-      const roomResponsePromise = fetch('/api/room', {
-        method: 'GET',
-        headers: {
-          Authorization: 'Bearer ' + token,
-        }
-      });
 
-      const usernameResponsePromise = fetch('/api/user/@me', {
+      const response = await fetch('/api/user/@me', {
         method: 'GET',
         headers: {
           Authorization: 'Bearer ' + token,
         }
       })
 
-      const roomResponse = await roomResponsePromise;
-      const usernameResponse = await usernameResponsePromise;
+      if (response.status != 200) {
+        localStorage.removeItem('token');
+        router.push('/login');
+        return;
+        // throw new Error('Invalid Token');
+      }
 
-      if (roomResponse.status == 200) {
-        const roomResponseData = await roomResponse.json();
-        router.push(`/room/${roomResponseData.room_id}`);
+      const responseData = await response.json();
+
+      if (responseData.room_id != '') {
+        router.push(`/room/${responseData.room_id}`);
         return;
       }
 
-      if (usernameResponse.status != 200) {
-        console.log(usernameResponse);
-        localStorage.removeItem('token');
-        // router.push('/login');
-
-        throw new Error('Invalid Token');
-      }
-
-      const usernameResponseData = await usernameResponse.json();
-      setUsername(usernameResponseData.username);
+      setUsername(responseData.username);
       setTimeout(() => dispatchEvent(new Event('loaded')), 1000);
     }
 
