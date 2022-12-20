@@ -2,16 +2,19 @@ import Head from 'next/head'
 import styles from '@styles/Room.module.css'
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { syncHostQueueWithRoomLoop } from 'lib/partyfy-client';
 
 export default function Room() {
   const router = useRouter();
   const [members, setMembers] = useState<string[]>([]);
   const [isHost, setIsHost] = useState<boolean>(false);
+  const [host, setHost] = useState<string>('');
 
   const { id: roomId } = router.query;
 
   useEffect(() => {
     if (!router.isReady) return;
+    if (typeof roomId != 'string') return;
 
     const token = localStorage.getItem('token');
 
@@ -49,19 +52,18 @@ export default function Room() {
 
       const getRoomResponseData = await getRoomResponse.json();
 
-      
       setMembers(getRoomResponseData.members);
-      console.log(members);
+      setIsHost(getRoomResponseData.is_host);
+      setHost(getRoomResponseData.host_name);
+
+      if (getRoomResponseData.is_host) {
+        console.log('START LOOP');
+        syncHostQueueWithRoomLoop(token, roomId)
+          .catch(() => console.error('Could not sync, aborting loop'));
+      }
+
       dispatchEvent(new Event('loaded'));
     })();
-
-    //TESTING ONLY
-    fetch(`/api/room/${roomId}`, {
-      method: 'OPTIONS',
-      headers: {
-        Authorization: 'Bearer ' + token,
-      }
-    })
 
   }, [router]);
 
@@ -74,10 +76,10 @@ export default function Room() {
       </Head>
 
       <main className={styles.main}>
+        <h1 className={styles.headline}>Welcome to {host}'s Party!</h1>
         <p className="card">
           {members}
         </p>
-
       </main>
 
       <footer className={styles.footer}>
@@ -94,7 +96,7 @@ export default function Room() {
   )
 }
 
-function HostOptions(){
+function HostOptions() {
   return (
     <div>HOST OPTIONS</div>
   );

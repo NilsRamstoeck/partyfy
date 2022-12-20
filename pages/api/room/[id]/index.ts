@@ -73,8 +73,6 @@ async function _get(req: NextApiRequest, res: NextApiResponse) {
             return;
         }
 
-        console.log(room.host);
-
         res.status(200).json({
             members: room.members.map(user => user.username),
             is_host: payload.email == room.host.email,
