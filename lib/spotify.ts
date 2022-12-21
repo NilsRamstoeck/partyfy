@@ -3,7 +3,7 @@ import { IUser } from 'database/user';
 import { Document } from 'mongoose';
 import querystring from 'querystring';
 
-interface SpotifyUserData {
+export interface SpotifyUserData {
     display_name: string,
     email: string,
     external_urls: {
@@ -20,7 +20,7 @@ interface SpotifyUserData {
     uri: string
 }
 
-interface SpotifyToken {
+export interface SpotifyToken {
     token_type: string,
     expires_in: number,
     access_token: string,
@@ -28,7 +28,7 @@ interface SpotifyToken {
     scope: string
 }
 
-interface SpotifyPlaybackState {
+export interface SpotifyPlaybackState {
     device: {
         id: string,
         is_active: boolean,
@@ -50,46 +50,13 @@ interface SpotifyPlaybackState {
         uri: string
     },
     progress_ms: number,
-    item: {
-        album: {
-            album_type: string,
-            artists: [any],
-            available_markets: [any],
-            external_urls: [any],
-            href: string,
-            id: string,
-            images: any,
-            name: string,
-            release_date: string,
-            release_date_precision: string,
-            total_tracks: number,
-            type: string,
-            uri: string
-        },
-        artists: [[Object]],
-        disc_number: number,
-        duration_ms: number,
-        explicit: boolean,
-        external_ids: { isrc: string },
-        external_urls: {
-            spotify: string
-        },
-        href: string,
-        id: string,
-        is_local: boolean,
-        name: string,
-        popularity: number,
-        preview_url: string,
-        track_number: number,
-        type: string,
-        uri: string
-    },
+    item: SpotifyTrack,
     currently_playing_type: string,
     actions: { disallows: { pausing: boolean, skipping_prev: boolean } },
     is_playing: boolean
 }
 
-interface SpotifyDevice {
+export interface SpotifyDevice {
     id: string,
     is_active: boolean,
     is_private_session: boolean,
@@ -97,6 +64,41 @@ interface SpotifyDevice {
     name: string,
     type: string,
     volume_percent: number
+}
+
+export interface SpotifyTrack {
+    album: {
+        album_type: string,
+        artists: any[],
+        available_markets: any[],
+        external_urls: any[],
+        href: string,
+        id: string,
+        images: any,
+        name: string,
+        release_date: string,
+        release_date_precision: string,
+        total_tracks: number,
+        type: string,
+        uri: string
+    },
+    artists: Object[],
+    disc_number: number,
+    duration_ms: number,
+    explicit: boolean,
+    external_ids: { isrc: string },
+    external_urls: {
+        spotify: string
+    },
+    href: string,
+    id: string,
+    is_local: boolean,
+    name: string,
+    popularity: number,
+    preview_url: string,
+    track_number: number,
+    type: string,
+    uri: string
 }
 
 export async function getSpotifyAccessToken(code: string): Promise<SpotifyToken | null> {
@@ -154,8 +156,6 @@ export async function refreshSpotifyToken(user: Document & IUser) {
         user.access_token = responseData.access_token;
         await user.save();
 
-        console.log(responseData);
-
     } catch (e) {
         console.log(e);
     }
@@ -169,7 +169,7 @@ async function spotifyAPIRequest(url: string, method: string, access_token: stri
             Authorization: `Bearer ${access_token}`,
             'Content-Type': 'application/json'
         },
-        body: body?JSON.stringify(body):null
+        body: body ? JSON.stringify(body) : null
     });
 
     const responseText = await response.text();
@@ -191,6 +191,22 @@ async function spotifyAPIRequest(url: string, method: string, access_token: stri
     }
 }
 
+export async function syncRoomQueueWithSpotifyQueue(user: IUser, room: Document & IRoom): Promise<boolean> {
+    const spotifyQueue = await getSpotifyQueue(user);
+
+    if (!spotifyQueue) {
+        return false;
+    }
+    
+    room.queue = spotifyQueue.map(track => track.uri);
+    await room.save();
+    return true;
+}
+
+export async function syncSpotifyQueueWithRoomQueue(user: IUser, room: IRoom) {
+
+}
+
 export function getSpotifyUserInfo(access_token: string): Promise<SpotifyUserData | null> {
     return spotifyAPIRequest('https://api.spotify.com/v1/me', 'GET', access_token);
 }
@@ -201,6 +217,10 @@ export function getSpotifyPlaybackState({ access_token }: IUser): Promise<Spotif
 
 export async function getSpotifyDevices({ access_token }: IUser): Promise<SpotifyDevice[] | null> {
     return (await spotifyAPIRequest('https://api.spotify.com/v1/me/player/devices', 'GET', access_token)).devices;
+}
+
+export async function getSpotifyQueue({ access_token }: IUser): Promise<SpotifyTrack[] | null> {
+    return (await spotifyAPIRequest('https://api.spotify.com/v1/me/player/queue', 'GET', access_token)).queue;
 }
 
 export function activatePlaybackDevice({ access_token }: IUser, device: SpotifyDevice) {

@@ -3,9 +3,7 @@ import { Room } from 'database/room';
 import { User } from 'database/user';
 import { authorizeToken } from 'lib/auth';
 import { connectToDatabase } from 'lib/mongo';
-import { activatePlaybackDevice, getSpotifyDevices, getSpotifyPlaybackState, playCurrentSong, refreshSpotifyToken } from 'lib/spotify';
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { loadDefaultErrorComponents } from 'next/dist/server/load-components';
 
 const methods = {
     GET: (req: NextApiRequest, res: NextApiResponse) => _get(req, res),

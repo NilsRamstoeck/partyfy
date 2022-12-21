@@ -5,7 +5,8 @@ import { IUser } from "./user";
 export interface IRoom {
     id: string,
     host: IUser,
-    members: IUser[]
+    members: IUser[],
+    queue: string[]
 }
 
 const RoomSchema = new Schema<IRoom>({
@@ -25,6 +26,10 @@ const RoomSchema = new Schema<IRoom>({
     members: [{
         type: Schema.Types.ObjectId,
         ref: 'User'
+    }],
+    queue: [{
+        type: String,
+        default: [],
     }]
 })
 

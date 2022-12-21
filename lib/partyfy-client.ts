@@ -19,17 +19,27 @@ export async function runInLoop(toRun: Function, timeout: number): Promise<void>
 
 }
 
-export async function syncHostQueueWithRoom(token: string, roomId: string) {
-    const response = await fetch(`/api/room/${roomId}/sync`);
+export async function syncQueueWithRoom(token: string, roomId: string) {
+    const response = await fetch(`/api/room/${roomId}/sync`, {
+        method: 'GET',
+        headers: {
+            Authorization: 'Bearer ' + token
+        }
+    });
+
     if (response.status != 200) {
         throw new Error('Could not sync Queue')
     }
+
+    const responseData = await response.json();
+
+    dispatchEvent(new CustomEvent('queue-update', { detail: responseData }));
 }
 
-export function syncHostQueueWithRoomLoop(token: string, roomId: string): Promise<void> {
+export function syncQueueWithRoomLoop(token: string, roomId: string): Promise<void> {
     return runInLoop(async () => {
         try {
-            await syncHostQueueWithRoom(token, roomId);
+            await syncQueueWithRoom(token, roomId);
         } catch (_) {
             throw _
         }
