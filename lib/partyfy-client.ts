@@ -1,3 +1,5 @@
+import type { SpotifyDevice } from "./spotify";
+
 export async function runInLoop(toRun: Function, timeout: number): Promise<void> {
     const loop = async () => {
         try {
@@ -17,6 +19,16 @@ export async function runInLoop(toRun: Function, timeout: number): Promise<void>
         }
     })
 
+}
+
+async function partyfyAPIRequest(url: string, token: string, method: string, body?: Object) {
+    return await fetch(url, {
+        method,
+        headers: {
+            Authorization: 'Bearer ' + token
+        },
+        body: body ? JSON.stringify(body) : null
+    })
 }
 
 export async function syncQueueWithRoom(token: string, roomId: string) {
@@ -44,4 +56,8 @@ export function syncQueueWithRoomLoop(token: string, roomId: string): Promise<vo
             throw _
         }
     }, 2000)
+}
+
+export async function getAvailableDevices(token: string): Promise<SpotifyDevice[] & { err?: string }> {
+    return await (await partyfyAPIRequest('/api/user/@me/devices', token, 'GET')).json();
 }

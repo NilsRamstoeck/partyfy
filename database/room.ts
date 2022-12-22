@@ -2,17 +2,28 @@ import { generatePrimeSync } from "crypto";
 import { Model, model, models, Schema } from "mongoose"
 import { IUser } from "./user";
 
+export interface Song {
+    name: string,
+    uri: string,
+    artists: Object[],
+    album: string
+}
+
+//separate type in case I want to add things to it
+export type RoomQueue = Song[];
+
 export interface IRoom {
     id: string,
     host: IUser,
     members: IUser[],
-    queue: string[]
+    current_song: Song,
+    queue: RoomQueue
 }
 
 const RoomSchema = new Schema<IRoom>({
     id: {
         type: String,
-        index:true,
+        index: true,
         unique: true,
         default: Buffer.from(generatePrimeSync(64)).toString('hex')
     },
@@ -28,7 +39,12 @@ const RoomSchema = new Schema<IRoom>({
         ref: 'User'
     }],
     queue: [{
-        type: String,
+        type: {
+            name: String,
+            uri: String,
+            album: String,
+            artists: [String]
+        },
         default: [],
     }]
 })

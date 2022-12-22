@@ -1,4 +1,5 @@
 import { client_id, client_secret, redirect_uri } from 'config';
+import { IRoom, RoomQueue } from 'database/room';
 import { IUser } from 'database/user';
 import { Document } from 'mongoose';
 import querystring from 'querystring';
@@ -197,13 +198,21 @@ export async function syncRoomQueueWithSpotifyQueue(user: IUser, room: Document 
     if (!spotifyQueue) {
         return false;
     }
-    
-    room.queue = spotifyQueue.map(track => track.uri);
+
+    room.queue = spotifyQueue.map(({uri, artists, name, album}) => ({uri, artists, name, album:album.name}));
     await room.save();
     return true;
 }
 
 export async function syncSpotifyQueueWithRoomQueue(user: IUser, room: IRoom) {
+    //TODO: write current track and position into DB on host sync
+
+    //Get current track and position of host
+    //if within the first or last 5 seconds of track, return
+    //get current track and position of client
+    //if within the first or last 5 seconds of track, return
+    //if song is correct and progress is out of sync <= 2 seconds, return
+    //if song is correct but out of sync, update progress to be back in sync and return 
 
 }
 
@@ -237,7 +246,12 @@ export function playCurrentSong({ access_token }: IUser): Promise<void> {
     return spotifyAPIRequest('https://api.spotify.com/v1/me/player/play', 'PUT', access_token);
 }
 
-export function setCurrentSong({ access_token }: IUser) {
+export function setSpotifyPlayback({ access_token }: IUser, queue: RoomQueue){
+    return spotifyAPIRequest('https://api.spotify.com/v1/me/player/play', 'PUT', access_token, {
+        uris: queue.map(song => song.name)
+    });
+}
 
+export function setCurrentSong({ access_token }: IUser) {
 
 }

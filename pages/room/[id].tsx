@@ -55,13 +55,11 @@ export default function Room() {
       setMembers(getRoomResponseData.members);
       setIsHost(getRoomResponseData.is_host);
       setHost(getRoomResponseData.host_name);
-
       if (getRoomResponseData.is_host) {
         console.log('START LOOP');
-        syncHostQueueWithRoomLoop(token, roomId)
+        syncQueueWithRoomLoop(token, roomId)
           .catch(() => console.error('Could not sync, aborting loop'));
       }
-
       dispatchEvent(new Event('loaded'));
     })();
 
