@@ -4,10 +4,15 @@
   grid-template-rows: 1fr 100px;
 }
 
+.headline{
+  text-align: center;
+}
+
 .main {
   display: grid;
+  margin: 2em;
   gap: 2em;
-  grid-template-columns: 90% 1fr;
+  grid-template-rows: 20% 70% 10%;
   justify-content: center;
   align-items: center;
 }

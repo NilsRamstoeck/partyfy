@@ -3,7 +3,7 @@ import { Room } from 'database/room';
 import { User } from 'database/user';
 import { authorizeToken } from 'lib/auth';
 import { connectToDatabase } from 'lib/mongo';
-import { refreshSpotifyToken, syncRoomQueueWithSpotifyQueue, syncSpotifyQueueWithRoomQueue } from 'lib/spotify';
+import { syncRoomWithSpotify, syncSpotifyWithRoom } from 'lib/spotify';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 const methods = {
@@ -36,7 +36,7 @@ async function _get(req: NextApiRequest, res: NextApiResponse) {
     if (!authorizationHeader) {
         res.status(401).json({ err: 'No authorization provided' });
         return;
-    }    
+    }
 
     const { isValid, payload } = authorizeToken(authorizationHeader);
 
@@ -63,7 +63,7 @@ async function _get(req: NextApiRequest, res: NextApiResponse) {
 
         const room = await Room.findOne({
             id: roomId
-        }, { members: true, host: true, queue: true })
+        })
             .populate('members')
             .populate('host');
 
@@ -79,20 +79,27 @@ async function _get(req: NextApiRequest, res: NextApiResponse) {
 
         const promises: Promise<any>[] = []
 
+        // await refreshSpotifyToken(user);
         room.members.forEach(user => {
             if (room.host.email == user.email)
-                promises.push(syncRoomQueueWithSpotifyQueue(user, room))
+                //TODO: change so if song is about to end, next one gets set
+                //in order to minimize API requests
+                promises.push(syncRoomWithSpotify(user, room))
             else
-                promises.push(syncSpotifyQueueWithRoomQueue(user, room));
+                promises.push(syncSpotifyWithRoom(room));
         });
 
         await Promise.allSettled(promises);
 
+
+        // await setSpotifyPlayback(user, room.queue);
         // console.log('Synced: ' + Date.now());
 
+        room.save();
         res.status(200).json({ queue: room.queue });
         return;
     } catch (_) {
+        console.log(_);
         res.status(500).json({ err: 'No Connection to Database' })
     }
 }

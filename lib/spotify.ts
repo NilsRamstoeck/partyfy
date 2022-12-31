@@ -1,5 +1,5 @@
 import { client_id, client_secret, redirect_uri } from 'config';
-import { IRoom, RoomQueue } from 'database/room';
+import { IRoom, RoomQueue, Song } from 'database/room';
 import { IUser } from 'database/user';
 import { Document } from 'mongoose';
 import querystring from 'querystring';
@@ -192,21 +192,53 @@ async function spotifyAPIRequest(url: string, method: string, access_token: stri
     }
 }
 
-export async function syncRoomQueueWithSpotifyQueue(user: IUser, room: Document & IRoom): Promise<boolean> {
+export async function syncRoomWithSpotify(user: IUser, room: Document & IRoom): Promise<boolean> {
     const spotifyQueue = await getSpotifyQueue(user);
+    const currentSong = await getCurrentSong(user);
 
-    if (!spotifyQueue) {
+    if (!spotifyQueue || !currentSong) {
+        room.queue = [];
+        room.current_song = null;
+        await room.save();
         return false;
     }
 
-    room.queue = spotifyQueue.map(({uri, artists, name, album}) => ({uri, artists, name, album:album.name}));
+    room.queue = spotifyQueue.map(({ uri, artists, name, album }) => ({ uri, artists, name, album: album.name }));
+    room.current_song = {
+        track: {
+            album: currentSong.album.name,
+            artists: currentSong.artists,
+            name: currentSong.name,
+            uri: currentSong.uri
+        },
+        progress: currentSong.progress,
+        is_playing: currentSong.is_playing
+    }
+
+    // console.log('ROOM ' + room.id + ' UPDATED');
+    console.log(room.current_song);
+
+
     await room.save();
     return true;
 }
 
-export async function syncSpotifyQueueWithRoomQueue(user: IUser, room: IRoom) {
-    //TODO: write current track and position into DB on host sync
+export async function syncSpotifyWithRoom(room: IRoom) {
+    room.members.forEach(async member => {
+        if (member.email == room.host.email) return;
+        const currentSongRoom = room.current_song;
 
+        if (!currentSongRoom || !currentSongRoom.is_playing) {
+            pauseCurrentSong(member);
+            return;
+        }
+
+        const currentSongMember = await getCurrentSong(member);
+
+        if (!currentSongMember || currentSongMember.uri != currentSongRoom.track.uri) {
+
+        }
+    });
     //Get current track and position of host
     //if within the first or last 5 seconds of track, return
     //get current track and position of client
@@ -222,6 +254,18 @@ export function getSpotifyUserInfo(access_token: string): Promise<SpotifyUserDat
 
 export function getSpotifyPlaybackState({ access_token }: IUser): Promise<SpotifyPlaybackState | null> {
     return spotifyAPIRequest('https://api.spotify.com/v1/me/player', 'GET', access_token);
+}
+
+export async function getCurrentSong({ access_token }: IUser) {
+    const responseData = await spotifyAPIRequest('https://api.spotify.com/v1/me/player/currently_playing', 'GET', access_token);
+    if (!responseData.item) return null;
+    const track = {
+        ...(responseData.item as SpotifyTrack),
+        progress: (responseData.progress_ms as number),
+        is_playing: (responseData.is_playing as boolean)
+    };
+
+    return track;
 }
 
 export async function getSpotifyDevices({ access_token }: IUser): Promise<SpotifyDevice[] | null> {
@@ -246,12 +290,15 @@ export function playCurrentSong({ access_token }: IUser): Promise<void> {
     return spotifyAPIRequest('https://api.spotify.com/v1/me/player/play', 'PUT', access_token);
 }
 
-export function setSpotifyPlayback({ access_token }: IUser, queue: RoomQueue){
+export function setSpotifyPlayback({ access_token }: IUser, queue: RoomQueue) {
     return spotifyAPIRequest('https://api.spotify.com/v1/me/player/play', 'PUT', access_token, {
         uris: queue.map(song => song.name)
     });
 }
 
-export function setCurrentSong({ access_token }: IUser) {
-
+export function setCurrentSong({ access_token }: IUser, song:string, position:number) {
+    return spotifyAPIRequest('https://api.spotify.com/v1/me/player/play', 'PUT', access_token, {
+        uris: [song],
+        position_ms: position
+    });
 }

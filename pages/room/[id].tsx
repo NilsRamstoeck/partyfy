@@ -2,13 +2,17 @@ import Head from 'next/head'
 import styles from '@styles/Room.module.css'
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { syncHostQueueWithRoomLoop } from 'lib/partyfy-client';
+import { syncQueueWithRoomLoop } from 'lib/partyfy-client';
+import type { SpotifyDevice } from 'lib/spotify';
+import { SpotifyDevices } from 'components/SpotifyDevices';
 
 export default function Room() {
   const router = useRouter();
   const [members, setMembers] = useState<string[]>([]);
   const [isHost, setIsHost] = useState<boolean>(false);
+  const [devices, setDevices] = useState<SpotifyDevice[]>([]);
   const [host, setHost] = useState<string>('');
+  const [token, setToken] = useState<string>('');
 
   const { id: roomId } = router.query;
 
@@ -16,12 +20,16 @@ export default function Room() {
     if (!router.isReady) return;
     if (typeof roomId != 'string') return;
 
-    const token = localStorage.getItem('token');
 
+    const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
       return;
     }
+
+    setToken(token);
+
+    addEventListener('queue-update', ((e: CustomEvent) => console.log(e.detail)) as EventListener);
 
     (async function () {
 
@@ -78,6 +86,11 @@ export default function Room() {
         <p className="card">
           {members}
         </p>
+        {/* <div className="card">
+          {token!=''?<SpotifyDevices
+            token={token}
+          ></SpotifyDevices>:''}
+        </div> */}
       </main>
 
       <footer className={styles.footer}>

@@ -16,7 +16,11 @@ export interface IRoom {
     id: string,
     host: IUser,
     members: IUser[],
-    current_song: Song,
+    current_song: {
+        track: Song,
+        progress: number,
+        is_playing: boolean
+    } | null,
     queue: RoomQueue
 }
 
@@ -38,12 +42,24 @@ const RoomSchema = new Schema<IRoom>({
         type: Schema.Types.ObjectId,
         ref: 'User'
     }],
+    current_song: {
+        type: {
+            progress: Number,
+            is_playing: Boolean,
+            track: {
+                name: String,
+                uri: String,
+                artists: [Object],
+                album: String
+            }
+        }
+    },
     queue: [{
         type: {
             name: String,
             uri: String,
             album: String,
-            artists: [String]
+            artists: [Object]
         },
         default: [],
     }]
